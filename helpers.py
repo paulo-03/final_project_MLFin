@@ -15,3 +15,9 @@ def load_data_df(file_path: str):
     data = data[data['date'].dt.year != 2024]
 
     return data
+
+
+def select_time_window(data: pd.DataFrame, from_: int,  to_: int):
+    """Filter the dataframe to keep only rows within the time window selected"""
+    data = data[(data['date'].dt.year >= from_) & (data['date'].dt.year <= to_)]
+    return data

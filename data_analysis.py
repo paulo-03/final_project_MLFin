@@ -17,6 +17,7 @@ def asset_price_plot(data: pd.DataFrame, permno_id: int):
     # Customize the plot if needed
     plt.title(f'(Log)Price Over Time (permno: {permno_id})')  # Set the title of the plot
     plt.xlabel('Date')  # Set the label for the x-axis
+    plt.xticks(rotation=45)
     plt.ylabel('Price')  # Set the label for the y-axis
     plt.grid(True)  # Enable grid lines
     plt.show()
@@ -70,20 +71,50 @@ def attributes_type(file_path: str):
 
 
 def continuous_attributes_description(data: pd.DataFrame, column_name: list):
-    """Compute a brief statistical description of numerical attributes"""
+    """Compute a brief statistical description of continuous attributes"""
     # Initialize dictionaries to store information
-    numerical_info = {'attribute': [], 'min': [], 'max': [], 'mean': [], 'nan_ratio': []}
+    continuous_info = {'attribute': [], 'min': [], 'max': [], 'mean': [], 'nan_ratio': []}
     # For numerical attributes
     for col in column_name:
         nan_ratio = data[col].isnull().mean()
-        numerical_info['attribute'].append(col)
-        numerical_info['min'].append(data[col].min())
-        numerical_info['max'].append(data[col].max())
-        numerical_info['mean'].append(data[col].mean())
-        numerical_info['nan_ratio'].append(nan_ratio)
+        continuous_info['attribute'].append(col)
+        continuous_info['min'].append(data[col].min())
+        continuous_info['max'].append(data[col].max())
+        continuous_info['mean'].append(data[col].mean())
+        continuous_info['nan_ratio'].append(nan_ratio)
     # Convert dict to pd.Dataframe
-    numerical_info_df = pd.DataFrame(numerical_info)
-    return numerical_info_df
+    continuous_info_df = pd.DataFrame(continuous_info)
+    # Plot the Nan ratio over the attributes
+    plt.figure(figsize=(80, 10))
+    sns.barplot(data=continuous_info_df.sort_values(by='nan_ratio', ascending=True), x='attribute', y='nan_ratio')
+    plt.xticks(rotation=45)
+    plt.show()
+
+    return continuous_info_df
+
+
+def discrete_attributes_description(data: pd.DataFrame, column_name: list):
+    """Compute a brief statistical description of discrete attributes"""
+    # Initialize dictionaries to store information
+    discrete_info = {'attribute': [], 'unique_values': [], 'min': [], 'max': [], 'mean': [], 'nan_ratio': []}
+    # For numerical attributes
+    for col in column_name:
+        nan_ratio = data[col].isnull().mean()
+        discrete_info['attribute'].append(col)
+        discrete_info['unique_values'].append(data[col].nunique())
+        discrete_info['min'].append(data[col].min())
+        discrete_info['max'].append(data[col].max())
+        discrete_info['mean'].append(data[col].mean())
+        discrete_info['nan_ratio'].append(nan_ratio)
+    # Convert dict to pd.Dataframe
+    discrete_info_df = pd.DataFrame(discrete_info)
+    # Plot the Nan ratio over the attributes
+    plt.figure(figsize=(20, 5))
+    sns.barplot(data=discrete_info_df.sort_values(by='nan_ratio', ascending=True), x='attribute', y='nan_ratio')
+    plt.xticks(rotation=45)
+    plt.show()
+
+    return discrete_info_df
 
 
 def evolution_over_time(data: pd.DataFrame):
@@ -107,6 +138,11 @@ def evolution_over_time(data: pd.DataFrame):
     sns.lineplot(data=data_evolution, x='year', y='ratio_nan_price', ax=axs[1][0])
     sns.lineplot(data=data_evolution, x='year', y='ratio_nan_overall', ax=axs[1][1])
     return data_evolution
+
+
+def select_attributes_nan(attributes_infos: pd.DataFrame, max_nan_ratio: float):
+    """Select only attributes that have at most "max_nan_ratio" of nan values over de dataset."""
+    return attributes_infos[attributes_infos['nan_ratio'] <= max_nan_ratio]
 
 
 def _asset_number_over_time(data: pd.DataFrame):
