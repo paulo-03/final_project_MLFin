@@ -14,6 +14,8 @@ def load_data_df(file_path: str) -> pd.DataFrame:
     if 'date' not in data.columns.tolist():  # If already formatted, pass this
         data['yyyymm'] = pd.to_datetime(data['yyyymm'], format='%Y%m')
         data = data.rename(columns={'yyyymm': 'date'})  # rename the column
+    else:
+        data['date'] = pd.to_datetime(data['date'])
     # Delete all rows with year 2024 because of lack of data
     data = data[data['date'].dt.year != 2024]
 
