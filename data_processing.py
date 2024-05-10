@@ -20,7 +20,7 @@ def impute_data(data: pd.DataFrame, seed=42) -> pd.DataFrame:
                          criterion=('squared_error', 'gini'),
                          max_features='sqrt',
                          random_state=seed,
-                         n_estimators=150)
+                         n_estimators=10)
     # Cache the information attribute to not use them in the imputation
     data_info = data[INFORMATION_ATTRIBUTE]
     data_to_impute = data.drop(columns=INFORMATION_ATTRIBUTE)
