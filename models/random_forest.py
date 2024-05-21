@@ -14,8 +14,8 @@ class RandomForest:
     def __init__(self, data: pd.DataFrame, target: str = 'return'):
         self.target = target
 
-        data['date'] = pd.to_datetime(data['date'])
-        self.X = data.drop(columns=['return', 'log_return', 'log_price', 'date'])
+        # data['date'] = pd.to_datetime(data['date'])
+        self.X = data.drop(columns=[target])
         self.y = data[self.target]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2,
                                                                                 random_state=0, shuffle=True)
@@ -25,9 +25,10 @@ class RandomForest:
         self.max_depth = 3
         self.max_features = 1.0
         self.model = RandomForestRegressor(n_estimators=self.n_estimators, max_depth=self.max_depth,
-                                           max_features=self.max_features, n_jobs=-1, random_state=0)
+                                           max_features=self.max_features, random_state=0)
 
-    def hyperparameter_tuning_with_crossvalidation(self, n_estimators: list = None, max_depth: list = None,
+    def hyperparameter_tuning_with_crossvalidation(self, n_jobs, verbose, n_estimators: list = None,
+                                                   max_depth: list = None,
                                                    max_features: list = None, cv_splits: int = 5):
         if n_estimators is None:
             n_estimators = [50, 300]
@@ -42,16 +43,16 @@ class RandomForest:
             'max_features': max_features
         }
         kf = KFold(n_splits=cv_splits, shuffle=True, random_state=0)
-        grid_search = GridSearchCV(self.model, param_grid, cv=kf, n_jobs=-1, scoring='r2')
+        grid_search = GridSearchCV(self.model, param_grid, cv=kf, scoring='r2', n_jobs=n_jobs, verbose=verbose)
         grid_search.fit(self.X, self.y)
         return grid_search.best_params_
 
-    def set_model(self, n_estimators: list = 50, max_depth: list = 3, max_features: list = 1.0):
+    def set_model(self, n_jobs, verbose, n_estimators: list = 50, max_depth: list = 3, max_features: list = 1.0):
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.max_features = max_features
         self.model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, max_features=max_features,
-                                           n_jobs=-1, random_state=0)
+                                           random_state=0, verbose=verbose, n_jobs=n_jobs)
 
     def fit_predict_and_print_score(self):
         self.model.fit(self.X_train, self.y_train)
@@ -69,7 +70,6 @@ class RandomForest:
     def plot_feature_importance(self):
         feature_importance = pd.Series(self.model.feature_importances_, index=self.X.columns).sort_values(
             ascending=False)
-        fe
         plt.figure(figsize=(20, 10))
         sns.barplot(x=feature_importance.index, y=feature_importance.values)
         plt.xticks(rotation=90)  # Rotate x-axis labels by 90 degrees
@@ -86,5 +86,5 @@ class RandomForest:
             plt.title(f'Tree number: {tree_in_forest + 1}')
             plt.show()
 
-    def cross_val_score(self, cv: int = 5, scoring: str = 'r2'):
-        return cross_val_score(self.model, self.X, self.y, cv=cv, n_jobs=-1, scoring=scoring)
+    def cross_val_score(self, n_jobs, cv: int = 5, scoring: str = 'r2'):
+        return cross_val_score(self.model, self.X, self.y, cv=cv, n_jobs=n_jobs, scoring=scoring)

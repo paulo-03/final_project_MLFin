@@ -1,9 +1,9 @@
 """
 This python script propose a class containing all useful method in a linear regression.
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.model_selection import cross_val_score
 
@@ -22,7 +22,7 @@ class OLS:
         self.reg = None
         self.r_square = None
 
-    def fit(self):
+    def fit(self, alpha=None):
         self.reg = LinearRegression().fit(X=self.X, y=self.y)
         self.r_square = self.reg.score(self.X, self.y)
         self.weights = self.reg.coef_
@@ -48,7 +48,7 @@ class OLS:
         # Plot the absolute values of the weights
         plt.figure(figsize=(10, 4))
         plt.bar(x=top_k_names, height=np.abs(top_k_values), color=colors)
-        plt.title(f'Top {top_k} Predictors From Lasso Regression')
+        plt.title(f'Top {top_k} Predictors From linear Regression')
         plt.xlabel('Predictor Name')
         plt.xticks(rotation=90)
         plt.ylabel('Absolute Weight')
@@ -73,7 +73,7 @@ class OLSLasso(OLS):
         self.seed = seed
         self.r_square = None
 
-    def alpha_cross_validation(self, from_: float = 0.01, to_: float = 10, val_number: int = 10):
+    def alpha_cross_validation(self, n_jobs, from_: float = 0.01, to_: float = 10, val_number: int = 10):
         """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
         cross-validation to choose the best alpha possible."""
         # Initialize all the alphas to be cross-validated and the Lasso regressor
@@ -85,7 +85,7 @@ class OLSLasso(OLS):
         # Perform the cross-validation for all alphas
         for alpha in alphas:
             lasso.alpha = alpha
-            scores = cross_val_score(lasso, self.X, self.y, cv=5)
+            scores = cross_val_score(lasso, self.X, self.y, cv=5, n_jobs=n_jobs)
             mean_scores.append(scores.mean())
             std_scores.append(scores.std())
         # Convert for ease of usage the list in array
@@ -107,11 +107,13 @@ class OLSLasso(OLS):
         self.alpha = alphas[best_alpha_index]
         print(f"Best alpha found: {self.alpha:.3f}. Simply run '.fit()' method to use this alpha value.")
 
-    def fit(self):
-        if self.alpha is None:
-            raise ValueError(
-                "Alpha value not set. Please set alpha or use alpha_cross_validation to find the best alpha.")
-        self.reg = Lasso(alpha=self.alpha, random_state=self.seed).fit(X=self.X, y=self.y)
+    def fit(self, alpha=None):
+        if alpha is None:
+            alpha = self.alpha
+            if self.alpha is None:
+                raise ValueError(
+                    "Alpha value not set. Please set alpha or use alpha_cross_validation to find the best alpha.")
+        self.reg = Lasso(alpha=alpha, random_state=self.seed).fit(X=self.X, y=self.y, njobs=-2)
         self.r_square = self.reg.score(self.X, self.y)
         self.weights = self.reg.coef_
 

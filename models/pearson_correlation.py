@@ -8,7 +8,7 @@ import seaborn as sns
 
 class PearsonCorrelation:
     def __init__(self, data: pd.DataFrame):
-        self.correlation_matrix = data.drop(columns=['permno', 'date']).corr()
+        self.correlation_matrix = data.drop(columns=['permno', 'date'], errors='ignore').corr()
 
     def get_sorted_correlation_pairs(self, ascending=False, top_k_pairs: int = None) -> pd.DataFrame:
         # Reset the index
@@ -56,6 +56,14 @@ class PearsonCorrelation:
         plt.show()
 
     def plot(self, plot_type: str = 'heatmap'):
+        '''
+        This method allows to plot the correlation matrix in a specific way.
+        Args:
+            plot_type (str): The type of plot to display. It can be 'heatmap', 'mean' or 'median'
+
+        Returns:
+            None
+        '''
         if plot_type == 'heatmap':
             self._plot_correlation_matrix_heatmap()
         elif plot_type == 'mean':
