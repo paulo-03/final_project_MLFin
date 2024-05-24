@@ -3,3 +3,4 @@ matplotlib
 seaborn
 wrds
 tqdm
+sklearn
