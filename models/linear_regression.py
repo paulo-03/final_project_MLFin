@@ -2,11 +2,12 @@
 This python script propose a class containing all useful method in a linear regression.
 """
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.linear_model import LassoCV
+from sklearn.linear_model import LinearRegression, Lasso
 
 PASTEL_BLUE = '#aec6cf'
 PASTEL_GREEN = '#77dd77'
@@ -82,7 +83,7 @@ class OLSLasso(OLS):
         else:
             self.fit_alpha_cv()
 
-    def fit_alpha_cv(self, from_: float = 0.001, to_: float = 0.05, val_number: int = 100):
+    def fit_alpha_cv(self, from_: float = 0.00001, to_: float = 0.0005, val_number: int = 100):
         """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
         cross-validation to choose the best alpha possible."""
         # Initiate and fit model to perform the cross_validation
