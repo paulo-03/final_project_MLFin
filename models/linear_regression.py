@@ -1,20 +1,19 @@
 """
 This python script propose a class containing all useful method in a linear regression.
 """
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, Lasso
-from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LassoCV
 
 PASTEL_BLUE = '#aec6cf'
 PASTEL_GREEN = '#77dd77'
 
 
 class OLS:
-    def __init__(self,
-                 predictors: pd.DataFrame,
-                 label: pd.Series):
+    def __init__(self, predictors: pd.DataFrame, label: pd.Series):
         self.pred_name = predictors.columns.tolist()
         self.X = np.array(predictors)
         self.y = np.array(label)
@@ -22,7 +21,7 @@ class OLS:
         self.reg = None
         self.r_square = None
 
-    def fit(self, alpha=None):
+    def fit(self):
         self.reg = LinearRegression().fit(X=self.X, y=self.y)
         self.r_square = self.reg.score(self.X, self.y)
         self.weights = self.reg.coef_
@@ -72,50 +71,43 @@ class OLSLasso(OLS):
         self.alpha = alpha
         self.seed = seed
         self.r_square = None
+        self.cpu_num = os.cpu_count() // 2  # set to "-1" if you want to use all cpu cores available
 
-    def alpha_cross_validation(self, n_jobs, from_: float = 0.01, to_: float = 10, val_number: int = 10):
+    def fit(self):
+        """Method to train the data on the training data using the given alpha or the chosen one by the CV method."""
+        if self.alpha is not None:
+            self.reg = Lasso(alpha=self.alpha, random_state=self.seed).fit(X=self.X, y=self.y, njobs=-2)
+            self.r_square = self.reg.score(self.X, self.y)
+            self.weights = self.reg.coef_
+        else:
+            self.fit_alpha_cv()
+
+    def fit_alpha_cv(self, from_: float = 0.001, to_: float = 0.05, val_number: int = 100):
         """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
         cross-validation to choose the best alpha possible."""
-        # Initialize all the alphas to be cross-validated and the Lasso regressor
+        # Initiate and fit model to perform the cross_validation
         alphas = np.linspace(from_, to_, val_number)
-        lasso = Lasso(random_state=self.seed)
-        # Initiate the mean and std scores list for all alphas
-        mean_scores = []
-        std_scores = []
-        # Perform the cross-validation for all alphas
-        for alpha in alphas:
-            lasso.alpha = alpha
-            scores = cross_val_score(lasso, self.X, self.y, cv=5, n_jobs=n_jobs)
-            mean_scores.append(scores.mean())
-            std_scores.append(scores.std())
-        # Convert for ease of usage the list in array
-        mean_scores = np.array(mean_scores)
-        std_scores = np.array(std_scores)
+        self.reg = LassoCV(alphas=alphas,
+                           n_jobs=self.cpu_num,
+                           random_state=self.seed).fit(X=self.X, y=self.y)
+        # Retrieve important information and plot the CV progress
+        self.alpha = self.reg.alpha_
+        self.weights = self.reg.coef_
+        self.r_square = self.reg.score(self.X, self.y)
+        alphas_mse_avg = self.reg.mse_path_.mean(axis=1)[::-1]
 
-        # Plotting the mean scores with 95% CI
-        plt.figure(figsize=(10, 6))
-        plt.plot(alphas, mean_scores, label='Mean CV Score')
-        plt.fill_between(alphas, mean_scores - 1.96 * std_scores, mean_scores + 1.96 * std_scores, color='b', alpha=0.2,
-                         label='95% CI')
-        plt.title('Lasso Cross-Validation Scores for Different Alphas')
-        plt.xlabel('Alpha')
-        plt.ylabel('Mean CV Score')
+        # Find the index and the corresponded alpha value of the smallest value in alphas_mse_avg
+        min_index = np.argmin(alphas_mse_avg)
+        min_alpha = alphas[min_index]
+
+        # Plot results
+        plt.plot(alphas, alphas_mse_avg, color=PASTEL_BLUE)
+        plt.axvline(x=min_alpha, color=PASTEL_GREEN, linestyle='--', label=f'Min MSE at alpha={min_alpha:.4f}')
+        plt.title(r'5-Fold Cross Validation to Find The Best $\alpha$')
+        plt.xlabel('alpha')
+        plt.ylabel('mean mse over folds')
         plt.legend()
         plt.show()
-
-        best_alpha_index = np.argmax(mean_scores)
-        self.alpha = alphas[best_alpha_index]
-        print(f"Best alpha found: {self.alpha:.3f}. Simply run '.fit()' method to use this alpha value.")
-
-    def fit(self, alpha=None):
-        if alpha is None:
-            alpha = self.alpha
-            if self.alpha is None:
-                raise ValueError(
-                    "Alpha value not set. Please set alpha or use alpha_cross_validation to find the best alpha.")
-        self.reg = Lasso(alpha=alpha, random_state=self.seed).fit(X=self.X, y=self.y, njobs=-2)
-        self.r_square = self.reg.score(self.X, self.y)
-        self.weights = self.reg.coef_
 
     def show_weights(self, top_k: int = 20):
         """Allows to show nicely plotted the non-zero weights chosen by the Lasso method."""
