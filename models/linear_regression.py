@@ -4,10 +4,10 @@ This python script propose a class containing all useful method in a linear regr
 import os
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression, Lasso, ElasticNet, LassoCV, ElasticNetCV
+import seaborn as sns
+from sklearn.linear_model import LinearRegression, Lasso, ElasticNet, LassoCV, ElasticNetCV, Ridge, RidgeCV
 
 PASTEL_BLUE = '#aec6cf'
 PASTEL_GREEN = '#77dd77'
@@ -104,7 +104,7 @@ class OLSLasso(OLS):
 
         # Plot results
         plt.plot(alphas, alphas_mse_avg, color=PASTEL_BLUE)
-        plt.axvline(x=min_alpha, color=PASTEL_GREEN, linestyle='--', label=f'Min MSE at alpha={min_alpha:.4f}')
+        plt.axvline(x=min_alpha, color=PASTEL_GREEN, linestyle='--', label=f'Min MSE at alpha={min_alpha:.5f}')
         plt.title(r'5-Fold Cross Validation to Find The Best $\alpha$')
         plt.xlabel(r'$\alpha$')
         plt.ylabel('mean mse over folds')
@@ -147,6 +147,54 @@ class OLSLasso(OLS):
         plt.show()
 
 
+class OLSRidge(OLS):
+    def __init__(self,
+                 predictors: pd.DataFrame,
+                 label: pd.Series,
+                 alpha: float = None,
+                 seed: int = 42):
+        super().__init__(predictors, label)
+        self.alpha = alpha
+        self.seed = seed
+        self.r_square = None
+        self.cpu_num = os.cpu_count() // 2  # set to "-1" if you want to use all cpu cores available
+
+    def fit(self):
+        """Method to train the data on the training data using the given alpha or the chosen one by the CV method."""
+        if self.alpha is not None:
+            self.reg = Ridge(alpha=self.alpha, random_state=self.seed).fit(X=self.X, y=self.y)
+            self.r_square = self.reg.score(self.X, self.y)
+            self.weights = self.reg.coef_
+        else:
+            self.fit_alpha_cv()
+
+    def fit_alpha_cv(self, from_: float = 5, to_: float = 15, val_number: int = 100):
+        """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
+        cross-validation to choose the best alpha possible."""
+        # Initiate and fit model to perform the cross_validation
+        alphas = np.linspace(from_, to_, val_number)
+        self.reg = RidgeCV(alphas=alphas, store_cv_values=True, scoring=None).fit(X=self.X, y=self.y)
+
+        # Retrieve important information and plot the CV progress
+        self.alpha = self.reg.alpha_
+        self.weights = self.reg.coef_
+        self.r_square = self.reg.score(self.X, self.y)
+        alphas_mse_avg = self.reg.cv_values_.mean(axis=0)
+
+        # Find the index and the corresponded alpha value of the smallest value in alphas_mse_avg
+        min_index = np.argmin(alphas_mse_avg)
+        min_alpha = alphas[min_index]
+
+        # Plot results
+        plt.plot(alphas, alphas_mse_avg, color=PASTEL_BLUE)
+        plt.axvline(x=min_alpha, color=PASTEL_GREEN, linestyle='--', label=f'Min MSE at alpha={min_alpha:.4f}')
+        plt.title(r'5-Fold Cross Validation to Find The Best $\alpha$')
+        plt.xlabel(r'$\alpha$')
+        plt.legend()
+        plt.show()
+
+
+
 class OLSElasticNet(OLS):
     def __init__(self,
                  predictors: pd.DataFrame,
@@ -172,7 +220,7 @@ class OLSElasticNet(OLS):
         else:
             self.fit_alpha_l1_cv()
 
-    def fit_alpha_l1_cv(self, a_from_: float = 1e-5, a_to_: float = 5e-4,
+    def fit_alpha_l1_cv(self, a_from_: float = 8e-6, a_to_: float = 1e-4,
                         l1_from_: float = 1e-5, l1_to_: float = 1, val_number: int = 10):
         """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
         cross-validation to choose the best alpha possible."""
@@ -193,7 +241,7 @@ class OLSElasticNet(OLS):
 
         # Plot results
         print(f'alpha: {self.alpha}', f'l1_ratio: {self.l1_ratio}')
-        heatmap = sns.heatmap(alphas_l1_mse_avg, cmap='grey',
+        heatmap = sns.heatmap(alphas_l1_mse_avg, cmap='gray',
                               xticklabels=alphas, yticklabels=l1_ratios)
 
         # Format the tick labels in scientific notation
@@ -229,7 +277,7 @@ class OLSElasticNet(OLS):
         # Plot the absolute values of the weights
         plt.figure(figsize=(10, 4))
         plt.bar(x=top_k_names, height=np.abs(top_k_values), color=colors)
-        plt.title(f'Non-Zero Predictors From Lasso Regression ({len(self.weights[non_zero_weights])} '
+        plt.title(f'Non-Zero Predictors From ElasticNet Regression ({len(self.weights[non_zero_weights])} '
                   f'selected predictors)')
         plt.xlabel('Predictor Name')
         plt.xticks(rotation=90)
