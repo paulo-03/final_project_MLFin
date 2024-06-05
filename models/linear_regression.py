@@ -221,7 +221,7 @@ class OLSElasticNet(OLS):
             self.fit_alpha_l1_cv()
 
     def fit_alpha_l1_cv(self, a_from_: float = 8e-6, a_to_: float = 1e-4,
-                        l1_from_: float = 1e-5, l1_to_: float = 1, val_number: int = 10):
+                        l1_from_: float = 1e-5, l1_to_: float = 0.9, val_number: int = 10):
         """Method that will try the val_number alphas between from_ and to_ values and test the Lasso regression using
         cross-validation to choose the best alpha possible."""
         # Initiate and fit model to perform the cross_validation
@@ -241,7 +241,7 @@ class OLSElasticNet(OLS):
 
         # Plot results
         print(f'alpha: {self.alpha}', f'l1_ratio: {self.l1_ratio}')
-        heatmap = sns.heatmap(alphas_l1_mse_avg, cmap='gray',
+        heatmap = sns.heatmap(alphas_l1_mse_avg, cmap='Blues',
                               xticklabels=alphas, yticklabels=l1_ratios)
 
         # Format the tick labels in scientific notation
