@@ -10,7 +10,7 @@ class PearsonCorrelation:
     def __init__(self, data: pd.DataFrame):
         self.correlation_matrix = data.drop(columns=['permno', 'date'], errors='ignore').corr()
 
-    def get_sorted_correlation_pairs(self, ascending=False, top_k_pairs: int = None) -> pd.DataFrame:
+    def get_sorted_abs_correlation_pairs(self, ascending=False, top_k_pairs: int = None) -> pd.DataFrame:
         # Reset the index
         correlation_matrix_reset = self.correlation_matrix.reset_index()
 
@@ -21,7 +21,7 @@ class PearsonCorrelation:
         melted['pair'] = list(zip(melted['index'], melted['variable']))
 
         # Set the new column as the index and select the value column
-        flattened = melted.set_index('pair')['value'].rename('correlation')
+        flattened = melted.set_index('pair')['value'].rename('correlation').abs()
 
         # Print the flattened Series
         correlation_pairs = flattened.sort_values(ascending=ascending)[flattened != 1].iloc[::2].reset_index()
