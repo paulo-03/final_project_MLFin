@@ -1,6 +1,10 @@
 # Stock Return Predictions Using Machine Learning
 
 This repo will focus on **which predictors are relevant for return forecasting?**
+<br><br>
+
+
+### Download raw Data or preprocessed Data
 
 **Data** can be easily downloaded 
 ***[here](https://drive.google.com/file/d/17XtSLaKEcBQFyaM40jfG_nILWIWMfL77/view?usp=share_link)***. It has already been 
@@ -13,6 +17,22 @@ Pricing team.
 We used MissForest to impute the data and retrieve the missing values. Please note that for quality and computation 
 reasons we kept only the more relevant attributes and records. Then the data cleaned is obviously largely smaller, i.e. 
 6M records and ~200 attributes vs 1.7M records and 131 attributes, respectively data and data cleaned.
+<br>
+<br>
+
+### ML
+
+Look at [**main.ipynb**](./main.ipynb) to see the different ML algorithms and results.
+<br>
+<br>
+
+### Report
+
+Our [**final_report.pdf**](./final_report.pdf) describing the whole project
+
+<br>
+<br>
+<br>
 
 *Authors:* [Mina Attia](https://people.epfl.ch/mina.attia), [Arnaud Felber](https://people.epfl.ch/arnaud.felber), 
 [Milos Novakovic](https://people.epfl.ch/milos.novakovic), [Rami Atassi](https://people.epfl.ch/rami.atassi) & 
